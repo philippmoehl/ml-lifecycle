@@ -1,5 +1,4 @@
 ### FILES ###
-
 data/*
 
 ### Python ###
@@ -89,3 +88,6 @@ venv.bak/
 
 # Logging
 *.log
+
+# VSCODE
+.vscode
