@@ -1,0 +1,4 @@
+solution:
+  model: "gpt-3.5-turbo"
+  system_msg: "You are a plant specialist."
+  temperature: 0.6
