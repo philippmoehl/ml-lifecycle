@@ -1,13 +1,15 @@
 from dotenv import load_dotenv
 import io
 import logging
+import json
 import os
 import pandas as pd
 from PIL import Image
 import requests
-import yaml
 
 import openai
+
+from src.config import OpenAiConfig
 
 
 DIR_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -41,8 +43,8 @@ def setup():
 def load_yaml_file(file_path):
     with open(file_path, 'r') as file:
         try:
-            config = yaml.safe_load(file)
+            data = json.load(file)
+            config = OpenAiConfig(**data)
             return config
-        except yaml.YAMLError as e:
-            logger.error(f"Error loading YAML file {file_path}")
-            raise yaml.YAMLError(f"Error loading YAML file {file_path}")
+        except Exception as e:
+            logger.error(f"Error loading JSON file {file_path}")

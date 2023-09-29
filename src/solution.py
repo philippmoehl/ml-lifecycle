@@ -8,7 +8,7 @@ from src.utils import load_yaml_file
 DIR_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # configurations
-CONFIG = load_yaml_file(os.path.join(DIR_PATH, "config.yaml"))
+CONFIG = load_yaml_file(os.path.join(DIR_PATH, "config.json"))
 
 # logging
 logger = logging.getLogger(__name__)
@@ -19,12 +19,12 @@ def generate_solution(disease):
     try:
         logger.info(f"Generating solution for disease {disease}")
         response = openai.ChatCompletion.create(
-            model=CONFIG["solution"]["model"],
+            model=CONFIG.model,
             messages=[
-                {"role": "system", "content": CONFIG["solution"]["system_msg"]},
+                {"role": "system", "content": CONFIG.system_msg},
                 {"role": "user", "content": prompt}
             ],
-            temperature=CONFIG["solution"]["temperature"],
+            temperature=CONFIG.temperature,
         )
     except Exception as e:
         logger.error(str(e))
