@@ -5,7 +5,7 @@ Plant Health Prediction
 
 Description
 -----------------
-Predict plant health based on an image using deep learning. App is availbale at [philippmoehl-plant-disease-app-zgrf0b.streamlit.app/](https://philippmoehl-plant-disease-app-zgrf0b.streamlit.app/). If you want to run the app locally, or develop on top of it refer to the next sections.
+Predict plant health based on an image using deep learning. App is availbale at [plant-disease-app-iz85x2.streamlit.app](https://plant-disease-app-iz85x2.streamlit.app/). If you want to run the app locally, or develop on top of it refer to the next sections.
 
 
 Installation
