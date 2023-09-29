@@ -5,7 +5,7 @@ Plant Health
 
 Description
 -----------------
-Predict plant health based on an image using deep learning. With the help of OpenAi's chatGPT you can directly generate a step-by-step solution in the web applicaiton. App is availbale at [philippmoehl-plant-disease-app-zgrf0b.streamlit.app/](https://philippmoehl-plant-disease-app-zgrf0b.streamlit.app/). If you want to run the app locally, or develop on top of it refer to the next sections. Please note that the deployed app does not have the chatGPT feature as you will need to use your credentials.
+Predict plant health based on an image using deep learning. With the help of OpenAi's chatGPT you can directly generate a step-by-step solution in the web applicaiton. App is availbale at [plant-disease-app-iz85x2.streamlit.app](https://plant-disease-app-iz85x2.streamlit.app). If you want to run the app locally, or develop on top of it refer to the next sections. Please note that the deployed app does not have the chatGPT feature as you will need to use your credentials.
 
 
 Installation
