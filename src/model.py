@@ -78,5 +78,6 @@ class ImageClassifier():
             'Cabbage Black Rot':0
     }
 
-        result = f"{class_names[np.argmax(scores)]} with a { (100 * np.max(scores)).round(2) } percent confidence."
-        return result
+        prediction = class_names[np.argmax(scores)]
+        conf_score = (100 * np.max(scores)).round(2)
+        return prediction, conf_score
