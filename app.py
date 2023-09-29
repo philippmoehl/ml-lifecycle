@@ -21,7 +21,6 @@ def main():
         if st.button("Solution"):
             solution = generate_solution(prediction)
             st.write(solution)
-            print(solution)
         st.pyplot(fig)
 
 
