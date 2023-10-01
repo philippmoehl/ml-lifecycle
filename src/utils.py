@@ -2,12 +2,15 @@ from dotenv import load_dotenv
 import io
 import logging
 import json
+import numpy as np
 import os
 import pandas as pd
 from PIL import Image
+import random
 import requests
 
 import openai
+import torch
 
 from src.config import OpenAiConfig
 
@@ -15,6 +18,17 @@ from src.config import OpenAiConfig
 DIR_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 logger = logging.getLogger(__name__)
+
+
+def seed_everything(seed):
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+
 
 
 def setup_logging():

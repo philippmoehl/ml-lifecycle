@@ -1,18 +1,20 @@
 import cv2
+import torch
 from torch.utils.data import Dataset
 
 
 class LeafDataset(Dataset):
-    def __init__(self, data_path, transform=None):
-        self.data_path = data_path
+    def __init__(self, image_paths, labels, transform=None):
+        self.image_paths = image_paths
+        self.labels = labels
         self.transform = transform
-        self.image_paths = self._get_image_paths()
 
-    def _get_image_paths(self):
-        image_paths = []
-        for leaf_path in self.data_path.iterdir():
-            image_paths.extend(leaf_path.glob('*.[jJ][pP][gG]'))
-        return image_paths
+        self.initialize()
+
+    def initialize(self):
+        label_to_int = {
+            label: idx for idx, label in enumerate(set(self.labels))}
+        self.labels = [label_to_int[label] for label in self.labels]
 
     def __len__(self):
         return len(self.image_paths)
@@ -27,5 +29,17 @@ class LeafDataset(Dataset):
         if self.transform:
             image = self.transform(image = image)['image']
 
-        leaf_class = image_path.parent.name
-        return image, leaf_class
+        label = torch.tensor(self.labels[idx]).long()
+        return image, label
+
+
+def get_image_labels(data_path):
+    image_paths = []
+    labels = []
+
+    for label_path in data_path.iterdir():
+        label_image_paths = sorted(label_path.glob('*.[jJp][pPn][gGg]'))
+        image_paths.extend(label_image_paths)
+        labels.extend(len(label_image_paths) * [label_path.name])
+
+    return image_paths, labels
