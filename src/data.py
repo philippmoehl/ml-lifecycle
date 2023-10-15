@@ -1,4 +1,5 @@
 import cv2
+from sklearn.model_selection import train_test_split
 import torch
 from torch.utils.data import Dataset
 
@@ -33,6 +34,19 @@ class LeafDataset(Dataset):
         return image, label
 
 
+class WrappedDataLoader:
+    def __init__(self, dl, device):
+        self.dl = dl
+        self.device = device
+
+    def __len__(self):
+        return len(self.dl)
+
+    def __iter__(self):
+        for x, y in self.dl:
+            yield (x.to(self.device), y.to(self.device))
+
+
 def get_image_labels(data_path):
     image_paths = []
     labels = []
@@ -43,3 +57,8 @@ def get_image_labels(data_path):
         labels.extend(len(label_image_paths) * [label_path.name])
 
     return image_paths, labels
+
+
+def image_labels_split(data_path, test_size, seed):
+    X, y = get_image_labels(data_path)
+    return  train_test_split(X, y, test_size=test_size, random_state=seed)
