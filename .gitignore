@@ -1,5 +1,6 @@
 ### FILES ###
 data/*
+outputs/*
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
