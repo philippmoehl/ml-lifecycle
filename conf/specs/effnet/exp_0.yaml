@@ -1,0 +1,23 @@
+defaults:
+    - base_effnet
+
+algorithm:
+    _target_: src.algorithms.GdAlgorithm
+    dataset: "${get_cls: src.data.LeafDataset}"
+    model: 
+      _target_: src.algorithms.ModelHub
+      model_name: tf_efficientnet_b5_ns
+      pretrained: true
+    epochs_per_iteration: 1
+    data_loader_kwargs: 
+      batch_size: 32
+      shuffle: true
+    loss:
+      _target_: src.utils.CELoss
+      smoothing: 0.1
+    optimizer_factory: "${get_cls: torch.optim.Adam}"
+    optimizer_kwargs:
+      lr: 1e-4
+wandb:
+    group: exp_0
+name: exp_0
