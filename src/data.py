@@ -61,4 +61,5 @@ def get_image_labels(data_path):
 
 def image_labels_split(data_path, test_size, seed):
     X, y = get_image_labels(data_path)
-    return  train_test_split(X, y, test_size=test_size, random_state=seed)
+    return  train_test_split(
+        X, y, test_size=test_size, stratify=y, random_state=seed)

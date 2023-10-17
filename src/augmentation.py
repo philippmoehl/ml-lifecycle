@@ -70,11 +70,11 @@ def get_augmentations(
             ], 
             p = p_augment
         ),
-        A.Cutout(
+        A.CoarseDropout(
             p = p_augment,
-            num_holes = cutout[0], 
-            max_h_size = int(cutout[1] * image_size),
-            max_w_size = int(cutout[1] * image_size)
+            max_holes = cutout[0], 
+            max_height = int(cutout[1] * image_size),
+            max_width = int(cutout[1] * image_size)
         ),
         A.Normalize(mean = (0, 0, 0), std = (1, 1, 1)),
         ToTensorV2()

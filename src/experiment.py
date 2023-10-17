@@ -1,4 +1,4 @@
-import hydra
+import json
 from pathlib import Path
 import torch
 import wandb
@@ -10,11 +10,7 @@ from src.augmentation import get_augmentations
 class ImageExperiment:
     def __init__(self, config):
 
-        self._timestamp = utils.get_datetime_stamp()
-        self._log_path = config.log_path
-        self._name = config.name
-        self.log_path = self._log_path / f"{self._name}_{self._timestamp}"
-
+        self.log_path = config.log_path
         self.training_iters = config.training_iters
         self.checkpoint_freq = config.checkpoint_freq
 
@@ -56,12 +52,10 @@ class ImageExperiment:
             self.algorithm.model.eval()
         self.metrics.zero()
         with torch.no_grad():
-            for idx, (x, y) in enumerate(self._test_dataloader):
-                print(f"{idx} / {len(self._test_dataloader)}")
+            for x, y in self._test_dataloader:
                 self.metrics(prediction=self.algorithm.model(x), y=y)
-        print("test done")
         return self.metrics.finalize()
-    
+
     def _step(self, train=True):
         results = {"iteration": self.metrics.epoch}
         if train:
@@ -76,11 +70,9 @@ class ImageExperiment:
             self._step(train=False)
             wandb.run.summary["device"] = str(self._device)
             wandb.run.summary["n_gpus"] = torch.cuda.device_count()
-        
-        print(".")
 
         results = self._step()
-        return results # utils.flatten(results)
+        return results
     
     def save_checkpoint(self, tmp_checkpoint_dir):
         state_dict = {
@@ -91,12 +83,15 @@ class ImageExperiment:
         return tmp_checkpoint_dir
 
     def run(self):
-        results = []
+
         for iter in range(self.training_iters):
-            result = self.step()
-            results.append(result)
+            results = self.step()
+            utils.progress(results, iter, self.training_iters)
             if iter % self.checkpoint_freq == 0:
-                self.save_checkpoint(self.log_path / f"checkpoint_{iter:06}")
-        # save results as json
-        # save params as json, get from the conig.yaml from .hydra?!
+                tmp_checkpoint_dir = self.log_path / f"checkpoint_{iter:06}"
+                tmp_checkpoint_dir.mkdir(parents=True, exist_ok=True)
+                self.save_checkpoint(tmp_checkpoint_dir)
+
+        with open(self.log_path / "results.json", "w") as f:
+            json.dump(utils.flatten(results), f)
         return results

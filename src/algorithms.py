@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import timm
 import torch
 from torch import nn
+from warmup_scheduler import GradualWarmupScheduler
 
 from src import utils
 from src.data import WrappedDataLoader
@@ -45,6 +46,7 @@ class GdAlgorithm:
         scheduler_kwargs=None,
         scheduler_step_frequency=1,
         scheduler_step_unit="batch",
+        warm_up=0
     ):
         super().__init__()
 
@@ -60,6 +62,7 @@ class GdAlgorithm:
             raise ValueError(
                 "`scheduler_step_unit` must be either `batch` or `epoch`.")
         self._scheduler_step_unit = scheduler_step_unit
+        self.warm_up = warm_up
 
         self._epochs_per_iteration = epochs_per_iteration
         self._data_loader_kwargs = data_loader_kwargs
@@ -71,6 +74,8 @@ class GdAlgorithm:
         self._model = None
         self.optimizer = None
         self.scheduler = None
+        if self.warm_up > 0:
+            self._after_scheduler = None
         self._data_loader = None
         self._x = None
         self._y = None
@@ -92,10 +97,20 @@ class GdAlgorithm:
         )
 
         if self._scheduler_factory is not None:
-            self.scheduler = self._scheduler_factory(
-                self.optimizer, **self._scheduler_kwargs
-            )
-            self._save_attrs.append("scheduler")
+            if self.warm_up > 0:
+                self._after_scheduler = self._scheduler_factory(
+                    self.optimizer, **self._scheduler_kwargs
+                )
+                self.scheduler = GradualWarmupScheduler(
+                    optimizer=self.optimizer, multiplier=1, 
+                    total_epoch=self.warm_up + 1,
+                    after_scheduler=self._after_scheduler)
+                self._save_attrs.append("scheduler")
+            else:
+                self.scheduler = self._scheduler_factory(
+                    self.optimizer, **self._scheduler_kwargs
+                )
+                self._save_attrs.append("scheduler")
 
         dataset = self._dataset(self._x, self._y, transform=self._transform)
         self._data_loader = torch.utils.data.DataLoader(
@@ -103,7 +118,7 @@ class GdAlgorithm:
         )
         self._data_loader = WrappedDataLoader(
             self._data_loader, device=self._device)
-
+        
         self._initialized = True
 
     @property
@@ -128,7 +143,7 @@ class GdAlgorithm:
         for _ in range(self._epochs_per_iteration):
             self.metrics.zero()
 
-            for idx, (x, y) in enumerate(self._data_loader):
+            for x, y in self._data_loader:
 
                 def closure():
                     self.optimizer.zero_grad()
@@ -138,8 +153,6 @@ class GdAlgorithm:
                     return loss
 
                 orig_closure_loss = self.optimizer.step(closure=closure)
-                print(f"{idx} / {len(self._data_loader)}")
-                print(orig_closure_loss)
 
                 self._loss.store(loss=orig_closure_loss, batch_size=x.shape[0])
                 self.metrics.step += 1
@@ -149,6 +162,7 @@ class GdAlgorithm:
                     and self._scheduler_step_unit == "batch"
                     and self.metrics.step % self._scheduler_step_frequency == 0
                 ):
+
                     self.scheduler.step()
 
             summary = self.metrics.finalize()
