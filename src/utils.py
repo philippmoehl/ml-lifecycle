@@ -1,31 +1,35 @@
 from abc import ABC, abstractmethod
 import collections
 import datetime
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
+import hydra
 import io
 import logging
 import json
+import netrc
 import numpy as np
 import os
+from omegaconf import OmegaConf
 import pandas as pd
+from pathlib import Path
 from PIL import Image
 import random
 import requests
 import time
+import wandb
 
-import openai
+# import openai
 import torch
 import torch.nn.functional as F
 
 # from src.config import OpenAiConfig
 
-
-DIR_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 _NO_DEFAULT = object()
 WANDB_HOST = "api.wandb.ai"
 WANDB_API_KEY = "WANDB_API_KEY"
 NO_WANDB_API_KEY = "__placeholder__"
+
+LOSSES = ["CE", "smooth_CE", "Accuracy"]
 
 logger = logging.getLogger(__name__)
 
@@ -42,12 +46,12 @@ def seed_everything(seed):
     torch.backends.cudnn.deterministic = True
 
 
-def setup_logging():
+def setup_logging(log_path):
     logging.basicConfig(level=logging.INFO)
 
     # Create a FileHandler and set its output file
     file_handler = logging.FileHandler(
-        os.path.join(DIR_PATH, "application.log"))
+        os.path.join(log_path, "out.log"))
     file_handler.setLevel(logging.INFO)
 
     # Define a formatter for the file handler
@@ -304,7 +308,6 @@ class Accuracy(Loss):
     def loss(self, prediction, y):
         # TODO: prediciont call it out here as it is not softmaxed yet
         comparison = self._compare(prediction, y)
-        print(torch.mean(comparison, dtype=torch.float32))
         return torch.mean(comparison, dtype=torch.float32)
 
     def store(self, loss, batch_size):
@@ -331,7 +334,7 @@ class Accuracy(Loss):
             final_loss = (losses * batch_sizes / batch_sizes.sum()).sum()
             final_loss = final_loss.item()
 
-        if self.best is None or (final_loss < self.best):
+        if self.best is None or (final_loss > self.best):
             self.best = final_loss
             self.last_improve = 0
         else:
@@ -382,6 +385,23 @@ def nested_get(obj, string, default=_NO_DEFAULT, sep="/"):
     return obj
 
 
+def flatten(spec, parent_key="", sep="/"):
+    """
+    Flattens a nested spec by using a separator string.
+    """
+    items = []
+    new_key = parent_key + sep if parent_key else ""
+    if issequenceform(spec):
+        for i, v in enumerate(spec):
+            items.extend(flatten(v, new_key + str(i), sep=sep).items())
+    elif isinstance(spec, collections.abc.Mapping):
+        for k, v in spec.items():
+            items.extend(flatten(v, new_key + k, sep=sep).items())
+    else:
+        items.append((parent_key, spec))
+    return dict(items)
+
+
 def get_datetime_stamp():
     # Get the current date and time
     now = datetime.datetime.now()
@@ -390,3 +410,53 @@ def get_datetime_stamp():
     formatted_datetime = now.strftime('%Y-%m-%d_%H-%M-%S')
     
     return formatted_datetime
+
+
+def convert_paths_to_strings(original_data):
+    converted_data = {}
+    for key, value in original_data.items():
+        if isinstance(value, Path):
+            converted_data[key] = str(value)
+        elif isinstance(value, dict):
+            converted_data[key] = convert_paths_to_strings(value)
+        else:
+            converted_data[key] = value
+    return converted_data
+
+
+def preprocess_config(config):
+    """
+    Make log path and save config to it.
+    """
+    _log_path = config["specs"]["log_path"]
+    _name = config["specs"]["name"]
+    run = wandb.init(**config["specs"]["wandb"], config=OmegaConf.to_container(config))
+
+    timestamp = get_datetime_stamp()
+    log_path = _log_path / _name /  f"{run.name}_{timestamp}"
+    log_path.mkdir(parents=True, exist_ok=True)
+    with open(log_path / "params.json", "w") as f:
+        json.dump(convert_paths_to_strings(
+            OmegaConf.to_container(config)), f)
+
+    setup_logging(log_path)
+    config["specs"]["log_path"] = log_path
+    config = hydra.utils.instantiate(config)
+    
+    return config
+
+
+def progress(results, iter, training_iters):
+    train = results["train"]
+    train_loss = [(key, value["current"]) for key, value in train.items() if key in LOSSES][0]
+    lr = train["lr"]
+    time = train["time"]
+
+    test = results["test"]
+    test_losses = [(key, value["current"]) for key, value in test.items() if key in LOSSES]
+
+    output = f"{iter+1}/{training_iters} | lr = {lr} | train_{train_loss[0]} = {train_loss[1]} | "
+    for name, loss in test_losses:
+        output += f"test_{name} = {loss} | "
+    output += f"{time:.2f}s"
+    logger.info(output)
