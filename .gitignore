@@ -1,6 +1,8 @@
 ### FILES ###
 data/*
 outputs/*
+results/*
+wandb/*
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
