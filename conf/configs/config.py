@@ -36,16 +36,16 @@ class ExperimentConfig:
     test_dataset: Any = "${get_cls: src.data.LeafDataset}"
     test_dataloader_kwargs: Dict = dataclasses.field(
         default_factory=lambda: {"batch_size": 32, "shuffle": False})
-    test_size: float = 0.1
+    test_size: float = 0.2
     test_losses: List = dataclasses.field(
         default_factory=lambda: [
             {
                 "_target_": "src.utils.CELoss",
-                "smoothing": 0.1
+                "smoothing": 0.2
             },
             {
                 "_target_": "src.utils.Accuracy"
-            }
+            },
         ]
     )
     device: str = "cuda"
