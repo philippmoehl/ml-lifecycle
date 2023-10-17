@@ -4,7 +4,7 @@ import hydra
 from conf.configs.utils import setup_hydra
 from src.experiment import ImageExperiment
 
-# from src.utils import setup_dev
+from src.utils import preprocess_config, setup_wandb
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
@@ -12,13 +12,14 @@ def main(cfg):
     """
     Run experiment.
     """
-    cfg = hydra.utils.instantiate(cfg)
+    cfg = preprocess_config(cfg)
     experiment = ImageExperiment(cfg["specs"])
     experiment.run()
 
 
 if __name__ == "__main__":
     setup_hydra()
-    os.environ["HYDRA_FULL_ERROR"] = "1"
+    setup_wandb()
+    # os.environ["HYDRA_FULL_ERROR"] = "1"
     # setup_dev()
     main()
