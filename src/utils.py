@@ -29,7 +29,7 @@ WANDB_HOST = "api.wandb.ai"
 WANDB_API_KEY = "WANDB_API_KEY"
 NO_WANDB_API_KEY = "__placeholder__"
 
-LOSSES = ["CE", "smooth_CE", "Accuracy"]
+LOSSES = ["CE", "smooth_CE", "Accuracy", "TaylorCE", "smooth_TaylorCE"]
 
 logger = logging.getLogger(__name__)
 
@@ -39,11 +39,9 @@ def seed_everything(seed):
     random.seed(seed)
     np.random.seed(seed)
     torch.backends.cudnn.benchmark = False
-    torch.use_deterministic_algorithms(True)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
 
 
 def setup_logging(log_path):
@@ -285,6 +283,95 @@ class CELoss(Loss):
     def name(self):
         prefix = "smooth_" if self.smoothing > 0 else ""
         return f"{prefix}CE"
+    
+
+class TaylorCELoss(Loss):
+    """
+    Cross-entropy loss.
+    """
+
+    def __init__(self, num_classes, n = 2, smoothing = 0.0, reduction = "mean", ignore_index = -1):
+
+        if not 0.0 <= smoothing < 1.0:
+            raise ValueError("Smoothing must be a float between 0 and 1")
+        if reduction not in ["mean", "sum"]:
+            raise ValueError("Reduction can either be a `mean` or `sum`.")
+        
+        self.num_classes = num_classes
+        self.n = n
+        self.smoothing = smoothing
+        self.reduction = reduction
+        self.ignore_index = ignore_index
+
+        self.best = None
+        self.last_improve = None
+        self._running = []
+        self._batch_sizes = []
+
+    def _smooth_loss(self, prediction, y):
+        assert prediction.shape[0] == y.shape[0]
+        logprobs = taylor_softmax(prediction, n=self.n).log()
+        if self.smoothing == 0:
+            return F.nll_loss(logprobs, y, reduction=self.reduction,
+                              ignore_index=self.ignore_index)
+        else:
+            return label_smooth(logprobs, y, smoothing=self.smoothing, 
+                                classes=self.num_classes)
+
+    def loss(self, prediction, y):
+        smooth_loss = self._smooth_loss(prediction, y)
+
+        if self.reduction == "sum":
+            return smooth_loss.sum()
+        else:
+            return smooth_loss.mean()
+
+    def store(self, loss, batch_size):
+        self._running.append(loss.detach())
+        self._batch_sizes.append(batch_size)
+
+    def zero(self):
+        self._running = []
+        self._batch_sizes = []
+
+    def __call__(self, prediction, y, store=True):
+        loss = self.loss(prediction, y)
+        if store:
+            self.store(loss, y.shape[0])
+        return loss
+
+    def finalize(self):
+        with torch.no_grad():
+            losses = torch.stack(self._running)
+
+            batch_sizes = torch.tensor(
+                self._batch_sizes, device=losses.device, dtype=losses.dtype
+            )
+            final_loss = (losses * batch_sizes / batch_sizes.sum()).sum()
+            final_loss = final_loss.item()
+
+        if self.best is None or (final_loss < self.best):
+            self.best = final_loss
+            self.last_improve = 0
+        else:
+            self.last_improve += 1
+
+        return {
+            "current": final_loss,
+            "best": self.best,
+            "last_improve": self.last_improve,
+        }
+
+    def state_dict(self):
+        return self.__dict__
+
+    def load_state_dict(self, state_dict):
+        self.__dict__.update(state_dict)
+
+    @property
+    def name(self):
+        prefix = "smooth_" if self.smoothing > 0 else ""
+        return f"{prefix}TaylorCE"
 
     
 class Accuracy(Loss):
@@ -355,6 +442,24 @@ class Accuracy(Loss):
     @property
     def name(self):
         return "Accuracy"
+    
+
+def taylor_softmax(x, dim=1, n=2):
+    fn = torch.ones_like(x)
+    denor = 1.
+    for i in range(1, n+1):
+        denor *= i
+        fn = fn + x.pow(i) / denor
+    out = fn / fn.sum(dim=dim, keepdims=True)
+    return out
+
+
+def label_smooth(x, y, classes, smoothing=0.0, dim=-1):
+    confidence = 1.0 - smoothing
+    true_dist = torch.zeros_like(x)
+    true_dist.fill_(smoothing / (classes - 1)) 
+    true_dist.scatter_(1, y.data.unsqueeze(1), confidence)
+    return torch.mean(torch.sum(-true_dist * x, dim=dim))
 
 
 def issequenceform(obj):

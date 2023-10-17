@@ -13,7 +13,7 @@ class ModelHub(nn.Module):
     """
     Wrapper model hubs.
     """
-    def __init__(self, model_name, pretrained=True):
+    def __init__(self, model_name, num_classes, pretrained=True):
         super().__init__()
         if "deit" in model_name:
             self.model = torch.hub.load(
@@ -23,6 +23,13 @@ class ModelHub(nn.Module):
         else:
             self.model = timm.create_model(
                 model_name=model_name, pretrained=pretrained)
+        
+        if 'efficient' in model_name:
+            self.model.classifier = nn.Linear(self.model.classifier.in_features, num_classes)
+        elif ('vit' in model_name) or ('deit' in model_name):
+            self.model.head = nn.Linear(self.model.head.in_features, num_classes)
+        else:
+            self.model.fc = nn.Linear(self.model.fc.in_features, num_classes)
 
     def forward(self, x):
         return self.model(x)
