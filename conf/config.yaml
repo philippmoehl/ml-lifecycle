@@ -1,4 +1,4 @@
 defaults:
   - base_config
-  - specs: effnet/exp_0
+  - specs: effnet/exp_1
   - _self_

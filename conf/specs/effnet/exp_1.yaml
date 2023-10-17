@@ -15,8 +15,10 @@ algorithm:
       batch_size: 32
       shuffle: true
     loss:
-      _target_: src.utils.CELoss
-      smoothing: 0.2
+      _target_: src.utils.TaylorCELoss
+      smoothing: 0.1
+      n: 2
+      num_classes: 39
     optimizer_factory: "${get_cls: torch.optim.Adam}"
     optimizer_kwargs:
       lr: 1e-4
@@ -26,7 +28,7 @@ algorithm:
       eta_min: 1e-6
     scheduler_step_unit: batch
     warm_up: 1387 # 1 * len(data_loader)
-seed: 1000
+seed: 1001
 wandb:
-    group: exp_0
-name: exp_0
+    group: exp_1
+name: exp_1

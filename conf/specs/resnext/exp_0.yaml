@@ -1,5 +1,5 @@
 defaults:
-    - base_effnet
+    - base_resnext
 
 training_iters: 10
 algorithm:
@@ -7,7 +7,7 @@ algorithm:
     dataset: "${get_cls: src.data.LeafDataset}"
     model: 
       _target_: src.algorithms.ModelHub
-      model_name: tf_efficientnet_b5.ns_jft_in1k
+      model_name: swsl_resnext50_32x4d
       num_classes: 39
       pretrained: true
     epochs_per_iteration: 1
@@ -15,8 +15,10 @@ algorithm:
       batch_size: 32
       shuffle: true
     loss:
-      _target_: src.utils.CELoss
-      smoothing: 0.2
+      _target_: src.utils.TaylorCELoss
+      smoothing: 0.1
+      n: 2
+      num_classes: 39
     optimizer_factory: "${get_cls: torch.optim.Adam}"
     optimizer_kwargs:
       lr: 1e-4

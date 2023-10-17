@@ -59,6 +59,22 @@ class EfficientNetConfig(ExperimentConfig):
     augment: AugmentationConfig = AugmentationConfig()
     wandb: Dict = dataclasses.field(
         default_factory=lambda: {"group": "exp", "project": "plants_effnet"})
+    
+
+@dataclass
+class VitConfig(ExperimentConfig):
+    log_path: pathlib.Path = pathlib.Path("results/vit")
+    augment: AugmentationConfig = AugmentationConfig()
+    wandb: Dict = dataclasses.field(
+        default_factory=lambda: {"group": "exp", "project": "plants_vit"})
+    
+
+@dataclass
+class ResNextConfig(ExperimentConfig):
+    log_path: pathlib.Path = pathlib.Path("results/resnext")
+    augment: AugmentationConfig = AugmentationConfig()
+    wandb: Dict = dataclasses.field(
+        default_factory=lambda: {"group": "exp", "project": "plants_resnext"})
 
 
 @dataclass
@@ -71,3 +87,5 @@ def store():
 
     cs.store(name="base_config", node=Config)
     cs.store(group="specs", name="base_effnet", node=EfficientNetConfig)
+    cs.store(group="specs", name="base_vit", node=VitConfig)
+    cs.store(group="specs", name="base_resnext", node=ResNextConfig)

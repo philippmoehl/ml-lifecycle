@@ -1,5 +1,5 @@
 defaults:
-    - base_effnet
+    - base_vit
 
 training_iters: 10
 algorithm:
@@ -7,7 +7,7 @@ algorithm:
     dataset: "${get_cls: src.data.LeafDataset}"
     model: 
       _target_: src.algorithms.ModelHub
-      model_name: tf_efficientnet_b5.ns_jft_in1k
+      model_name: vit_base_patch16_384
       num_classes: 39
       pretrained: true
     epochs_per_iteration: 1
@@ -26,7 +26,7 @@ algorithm:
       eta_min: 1e-6
     scheduler_step_unit: batch
     warm_up: 1387 # 1 * len(data_loader)
-seed: 1000
+seed: 1001
 wandb:
-    group: exp_0
-name: exp_0
+    group: exp_1
+name: exp_1
