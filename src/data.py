@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import cv2
 from sklearn.model_selection import train_test_split
 import torch
@@ -10,12 +11,21 @@ class LeafDataset(Dataset):
         self.labels = labels
         self.transform = transform
 
-        self.initialize()
+        self.label_to_int = None
+        self.int_to_label = None
 
-    def initialize(self):
-        label_to_int = {
-            label: idx for idx, label in enumerate(set(self.labels))}
-        self.labels = [label_to_int[label] for label in self.labels]
+        self.create_encoding()
+
+    def create_encoding(self):
+        unique_labels = list(dict.fromkeys(self.labels))
+        unique_labels.sort()
+        self.label_to_int = {
+            label: idx for idx, label in enumerate(unique_labels)
+        }
+        self.int_to_label = {
+            idx: label for idx, label in enumerate(unique_labels)
+        }
+        self.labels = [self.label_to_int[label] for label in self.labels]
 
     def __len__(self):
         return len(self.image_paths)
@@ -29,9 +39,15 @@ class LeafDataset(Dataset):
 
         if self.transform:
             image = self.transform(image = image)['image']
-
+ 
         label = torch.tensor(self.labels[idx]).long()
         return image, label
+
+    def decode(self, encoded):
+        return self.int_to_label[encoded]
+    
+    def encode(self, label):
+        return self.label_to_int[label]
 
 
 class WrappedDataLoader:

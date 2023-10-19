@@ -23,7 +23,7 @@ class ModelHub(nn.Module):
         else:
             self.model = timm.create_model(
                 model_name=model_name, pretrained=pretrained)
-        
+
         if 'efficient' in model_name:
             self.model.classifier = nn.Linear(self.model.classifier.in_features, num_classes)
         elif ('vit' in model_name) or ('deit' in model_name):

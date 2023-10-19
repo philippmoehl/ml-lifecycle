@@ -81,6 +81,12 @@ class ImageExperiment:
         checkpoint_path = Path(tmp_checkpoint_dir) / "state.pt"
         torch.save(state_dict, checkpoint_path)
         return tmp_checkpoint_dir
+    
+    def load_checkpoint(self, tmp_checkpoint_dir):
+        checkpoint_path = Path(tmp_checkpoint_dir) / "state.pt"
+        state_dict = torch.load(checkpoint_path, map_location=self._device)
+        for k in self.save_attrs:
+            utils.nested_get(self, k).load_state_dict(state_dict[k])
 
     def run(self):
 
