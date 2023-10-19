@@ -1,13 +1,13 @@
 defaults:
     - base_effnet
 
-training_iters: 10
+training_iters: 1
 algorithm:
     _target_: src.algorithms.GdAlgorithm
     dataset: "${get_cls: src.data.LeafDataset}"
     model: 
       _target_: src.algorithms.ModelHub
-      model_name: tf_efficientnet_b5.ns_jft_in1k
+      model_name: tf_efficientnet_b5
       num_classes: 39
       pretrained: true
     epochs_per_iteration: 1
