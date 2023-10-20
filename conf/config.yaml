@@ -1,4 +1,4 @@
 defaults:
   - base_config
-  - specs: effnet/exp_1
+  - specs: vit/exp_0
   - _self_

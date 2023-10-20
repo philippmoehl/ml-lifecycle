@@ -40,11 +40,22 @@ class ExperimentConfig:
     test_losses: List = dataclasses.field(
         default_factory=lambda: [
             {
-                "_target_": "src.utils.CELoss",
-                "smoothing": 0.2
+                "_target_": "src.utils.TaylorCELoss",
+                "smoothing": 0.1,
+                "n": 2,
+                "num_classes": 39
             },
             {
                 "_target_": "src.utils.Accuracy"
+            },
+            {
+                "_target_": "src.utils.F1",
+                "num_classes": 39,
+                "average": "macro"
+            },
+            {
+                "_target_": "src.utils.F1",
+                "num_classes": 39
             },
         ]
     )
@@ -64,7 +75,7 @@ class EfficientNetConfig(ExperimentConfig):
 @dataclass
 class VitConfig(ExperimentConfig):
     log_path: pathlib.Path = pathlib.Path("results/vit")
-    augment: AugmentationConfig = AugmentationConfig()
+    augment: AugmentationConfig = AugmentationConfig(image_size=224)
     wandb: Dict = dataclasses.field(
         default_factory=lambda: {"group": "exp", "project": "plants_vit"})
     

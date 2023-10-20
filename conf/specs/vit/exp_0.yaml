@@ -7,7 +7,7 @@ algorithm:
     dataset: "${get_cls: src.data.LeafDataset}"
     model: 
       _target_: src.algorithms.ModelHub
-      model_name: vit_base_patch16_384
+      model_name: vit_base_patch16_224
       num_classes: 39
       pretrained: true
     epochs_per_iteration: 1
