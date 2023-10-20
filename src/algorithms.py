@@ -14,7 +14,7 @@ class ModelHub(nn.Module):
     Wrapper model hubs.
     """
     def __init__(self, model_name, num_classes, pretrained=True):
-        super().__init__()
+        super(ModelHub, self).__init__()
         if "deit" in model_name:
             self.model = torch.hub.load(
                 repo_or_dir="facebookresearch/deit:main", 
