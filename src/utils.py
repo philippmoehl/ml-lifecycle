@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import collections
 import datetime
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 import hydra
 import io
 import logging
@@ -18,12 +18,12 @@ import requests
 import time
 import wandb
 
-# import openai
+import openai
 import torch
 import torch.nn.functional as F
 from torcheval.metrics.functional import multiclass_f1_score
 
-# from src.config import OpenAiConfig
+from src.config import OpenAiConfig
 
 _NO_DEFAULT = object()
 WANDB_HOST = "api.wandb.ai"
@@ -75,7 +75,7 @@ def setup_wandb(netrc_file=None):
         os.environ["WANDB_MODE"] = "run"
 
 
-def setup():
+def setup_app():
     # should first set all the env variables:
     # openai setup, wandb setup, 
     load_dotenv()
@@ -90,15 +90,14 @@ def setup_dev():
     logger.info("Initialized")
 
 
-
-# def load_yaml_file(file_path):
-#     with open(file_path, 'r') as file:
-#         try:
-#             data = json.load(file)
-#             config = OpenAiConfig(**data)
-#             return config
-#         except Exception as e:
-#             logger.error(f"Error loading JSON file {file_path}")
+def load_yaml_file(file_path):
+    with open(file_path, 'r') as file:
+        try:
+            data = json.load(file)
+            config = OpenAiConfig(**data)
+            return config
+        except Exception as e:
+            logger.error(f"Error loading JSON file {file_path}")
 
 
 def get_device():
