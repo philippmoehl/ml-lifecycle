@@ -3,6 +3,7 @@ data/*
 outputs/*
 results/*
 wandb/*
+logs/*
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
