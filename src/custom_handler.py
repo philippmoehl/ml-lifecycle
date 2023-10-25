@@ -13,8 +13,8 @@ class LeafClassifier(ImageClassifier):
     """
 
     image_processing = transforms.Compose([
-        transforms.Resize(384),
-        transforms.CenterCrop(384),
+        transforms.Resize(224),
+        transforms.CenterCrop(224),
         transforms.ToTensor(),
 
     ])

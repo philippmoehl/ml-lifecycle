@@ -79,8 +79,8 @@ def store(model, exp_path, opt_type, int_to_label, version="1.0"):
     model_name = f"{project}_{group}_{name}_{opt_type}"
     ser_file = "tmp.pt"
     torch.jit.save(model, ser_file)
-    idx2label_file = "tmp.json"
-    int_to_label = {str(k): ["id", v] for k,v in int_to_label.items()}
+    idx2label_file = "index_to_name.json"
+    int_to_label = {str(k): v for k,v in int_to_label.items()}
     with open(idx2label_file, "w") as f:
         json.dump(int_to_label, f)
 
@@ -197,7 +197,7 @@ def _prune(exp_path, checkpoint, prune_amount=0.3, device="cpu"):
         device
     )
     p_model = prune_model(model, prune_amount)
-    p_model = fuse_model(p_model, dataloader)
+    p_model = fuse_model(model, dataloader, trace=True)
     store(p_model, exp_path, "pruned", int_to_label(params))
 
 
@@ -247,20 +247,20 @@ def profile_model(
     return [size, avg, min_latency, max_latency, acc.item()]
 
 
-def fuse_model(model, dataloader):
-    # x, _ = next(iter(dataloader))
-    # try:
-    #     model = torch.jit.trace(model, x)
-    # except Exception as e:
-    #     raise TypeError("The selcted model is not torchscriptable")
+def fuse_model(model, dataloader, trace=False):
+    if trace:
+        x, _ = next(iter(dataloader))
+        try:
+            model = torch.jit.trace(model, x)
+        except Exception as e:
+            raise TypeError("The selcted model is not torchscriptable")
 
-    # optimized_model = torch.jit.optimize_for_inference(model)
-
-    # mix with script
-    try:
-        optimized_model = torch.jit.script(model)
-    except Exception as e:
-        raise TypeError("The selcted model is not torchscriptable")
+        optimized_model = torch.jit.optimize_for_inference(model)
+    else:
+        try:
+            optimized_model = torch.jit.script(model)
+        except Exception as e:
+            raise TypeError("The selcted model is not torchscriptable")
 
     return optimized_model
 
