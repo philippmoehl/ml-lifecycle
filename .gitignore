@@ -4,6 +4,8 @@ outputs/*
 results/*
 wandb/*
 logs/*
+.streamlit/*
+model_archive/*
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
