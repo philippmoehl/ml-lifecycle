@@ -10,6 +10,7 @@ from supabase import create_client, Client
 from src.model import ImageClassifier
 from src.solution import generate_solution
 from src.utils import setup_app, get_datetime_stamp
+from src.app_utils import page_config
 
 INFERENCE_API = "http://localhost:8080"
 MANAGEMENT_API = "http://localhost:8081"
@@ -120,6 +121,7 @@ def main():
 
 if __name__ == "__main__":
     setup_app()
+    page_config("App", "🌱")
     ping_serve()
     supabase_client = setup_supabase()
     main()
