@@ -1,16 +1,13 @@
+import datetime
 import logging
-import matplotlib.pyplot as plt
 import os
 from PIL import Image
 import requests
 import streamlit as st
 
-from supabase import create_client, Client
-
-from src.model import ImageClassifier
 from src.solution import generate_solution
 from src.utils import setup_app, get_datetime_stamp
-from src.app_utils import page_config
+from src.app_utils import page_config, setup_supabase,  show_image
 
 INFERENCE_API = "http://localhost:8080"
 MANAGEMENT_API = "http://localhost:8081"
@@ -18,39 +15,14 @@ MANAGEMENT_API = "http://localhost:8081"
 logger = logging.getLogger(__name__)
 
 
-def setup_supabase():
-    supabase_client = init_connection()
-    sign_in(supabase_client)
-    return supabase_client
-
-
-@st.cache_resource
-def init_connection():
-    # TODO: use env variables (setup_app loads them anyways)
-    url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_KEY")
-    return create_client(url, key)
-
-
-def sign_in(client):
-    mail = os.getenv("SUPABASE_MAIL")
-    password = os.getenv("SUPABASE_PSWD")
-    return client.auth.sign_in_with_password(
-        {"email": mail, "password": password})
-    
-
-def sign_out():
-    supabase_client.auth.sign_out()
-
-
 def store_image(path, image, bucket="plants"):
     return supabase_client.storage.from_(bucket).upload(
         path, image, { "content-type": "image/jpeg"})
 
 
-def store_prediction(path, cls, conf, table="mytable"):
+def store_prediction(path, cls, conf, id, table="plants"):
     supabase_client.table(table).insert(
-        {"image": path, "label": cls, "confidence": conf}).execute()
+        {"id": id, "name": path, "label": cls, "confidence": conf}).execute()
 
 
 def ping_serve():
@@ -59,8 +31,10 @@ def ping_serve():
         status = res.json()["status"]
         logger.info(f"Ping status: {status}")
     except Exception as e:
-        logger.error(e)
-        raise ConnectionError("torchserve is not running")
+        logger.warning(e)
+        st.write("torchserve is not running yet, start serving")
+        st.link_button("serve", "http://localhost:8501/serve")
+        st.stop()
     
 
 def list_models():
@@ -71,8 +45,8 @@ def list_models():
         models = {d["modelName"]: d["modelUrl"] for d in models}
         return models
     except Exception as e:
-        logger.error(e)
-        raise ConnectionError("torchserve is not running")
+        logger.warning(e)
+        raise ConnectionError("torchserve may not running")
     
 
 def predict(url, file):
@@ -82,46 +56,49 @@ def predict(url, file):
         logger.info(prediction)
         return res.json()
     except Exception as e:
-        logger.error(e)
-        raise ConnectionError("torchserve is not running")
-    
-
-def show_image(file):
-    st.image(file.getvalue(), caption=file.name)
+        logger.warning(e)
+        raise ConnectionError("torchserve may not running")
 
 
 def main():
-    
     st.header("PLANT DISEASE")
-
+    solution = st.sidebar.toggle("solution")
     models = list_models()
-    model_name = st.selectbox(
-        'Choose Model', (name for name, _ in models.items()))
+    if models:
+        model_name = st.selectbox(
+            'Choose Model', (name for name, _ in models.items()))
+    else:
+        st.write("torchserve has no registered model yet, register one")
+        st.link_button("serve", "http://localhost:8501/serve")
+        logger.warning("No torchserve model is registered")
+        st.stop()
     
     file_uploaded = st.file_uploader("Choose File", type=["png","jpg","jpeg"])
 
     if file_uploaded:
-        show_image(file_uploaded)
+        show_image(file_uploaded.getvalue(), file_uploaded.name)
         if st.button("Predict"):
             out = predict(model_name, file=file_uploaded.getvalue())
             st.write("Prediction:")
             st.write(out)
             timestamp = get_datetime_stamp()
+            date_format = datetime.datetime.strptime(
+                timestamp, '%Y-%m-%d_%H-%M-%S')
+            unix_timestamp = int(datetime.datetime.timestamp(date_format))
             file = f"{timestamp}.jpg"
             store_image(file, file_uploaded.getvalue())
             cls, conf = max(out.items(), key=lambda item: item[1])
-            store_prediction(file, cls, conf)
-        if st.button("Solution"):
-            # TODO: link highest conf class to name
-            # solution = generate_solution(out)
-            solution = "Use more water"
-            st.write(solution)
-
+            store_prediction(file, cls, conf, id=unix_timestamp)
+            if solution:
+                # TODO: link highest conf class to name
+                # solution = generate_solution(out)
+                solution_text = f"Using more water helps with {cls}"
+                st.write(solution_text)
 
 
 if __name__ == "__main__":
+    page_config("App", "🤖")
     setup_app()
-    page_config("App", "🌱")
     ping_serve()
     supabase_client = setup_supabase()
     main()
