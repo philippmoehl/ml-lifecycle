@@ -1,0 +1,19 @@
+openai:
+  use: false
+  model: gpt-3.5-turbo
+  system_msg: You are a plant specialist.
+  temperature: 0.6
+  prompt_file: ./src/prompt_design.txt
+torchserve:
+  inference_address: http://127.0.0.1:8080
+  management_address: http://127.0.0.1:8081
+  metrics_address: http://127.0.0.1:8082
+  number_of_gpu: 0
+  batch_size: 1
+  model_store: ./model_archive
+  log_location: ./logs
+  metrics_location: ./logs/metrics
+supabase:
+  table: plants
+  bucket: plants
+labels_to_ints: index_to_name.json
