@@ -14,9 +14,9 @@ import pandas as pd
 from pathlib import Path
 from PIL import Image
 import random
-import requests
 import time
 import wandb
+import yaml
 
 import openai
 import torch
@@ -75,29 +75,19 @@ def setup_wandb(netrc_file=None):
         os.environ["WANDB_MODE"] = "run"
 
 
-def setup_app():
-    # should first set all the env variables:
-    # openai setup, wandb setup, 
-    load_dotenv()
-    setup_logging()
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    logger.info("Initialized")
-
-
 def setup_dev():
     setup_logging()
     setup_wandb()
     logger.info("Initialized")
 
 
-def load_yaml_file(file_path):
+def load_yaml(file_path):
     with open(file_path, 'r') as file:
-        try:
-            data = json.load(file)
-            config = OpenAiConfig(**data)
-            return config
+        try: 
+            data = yaml.safe_load(file)
+            return data
         except Exception as e:
-            logger.error(f"Error loading JSON file {file_path}")
+            logger.error(f"Error loading YAML file {file_path}")
 
 
 def get_device():
