@@ -1,17 +1,11 @@
-ML Lifecycle from Start to Finish
+MLOps Lifecycle from Start to Finish
 =================
 
-iamge of all steps like deeplearning.ai with all the microservices (
-    hydra + wandb + pytorch + torch optimize + torchserve + frontend + backend +
-    active learning)
+![Header](imgs/header_mlops.png "ref.: MLops Specialization from deeplearing.ai")
 
-image: optimize --help output
+![Optimize](imgs/optimize.png "CLI deployment optimization")
 
-iamge: frontends + backends of the app (make a GIF file for that)
-
-blog article link to my website (also for me to remember)
-
-![alt text](imgs/streamlit.gif "gif")
+![App](imgs/app.gif "Web Application")
 
 Description
 -----------------
@@ -51,7 +45,7 @@ into the frontend application together with the model APIs, using
 [streamlit](https://streamlit.io/), which is again accompanied by a 
 configuration file controlling the app and administration rights.
 
-If you want to learn more about the underlying services and steps, read my blog
+If you want to learn more about the underlying services and steps, read my [blog](https://philippmoehl.github.io/)
 post accompaniing the project.
 
 Installation
