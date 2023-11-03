@@ -1,11 +1,15 @@
 MLOps Lifecycle from Start to Finish
 =================
-
 ![Header](imgs/header_mlops.png "ref.: MLops Specialization from deeplearing.ai")
+MLops
 
 ![Optimize](imgs/optimize.png "CLI deployment optimization")
+CLI Deployment Preparation Tool
 
 ![App](imgs/app.gif "Web Application")
+
+Web Application
+
 
 Description
 -----------------
