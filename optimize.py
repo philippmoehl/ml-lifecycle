@@ -17,7 +17,7 @@ def profile(
     device: str = "cpu"
     ):
     """
-    Profile model latency given an input yaml file
+    Profile model latency given an input yaml file.
     """
     return _profile(exp_path, checkpoint, iterations, precision, prune_amount, device)
 
@@ -25,7 +25,7 @@ def profile(
 @app.command()
 def fuse(exp_path: Path, checkpoint: int = 0, device: str = "cpu"):
     """
-    Profile model latency given an input yaml file
+    Convert model to torchscript for jit.
     """
     return _fuse(exp_path, checkpoint, device)
 
@@ -38,7 +38,7 @@ def quantize(
     device: str = "cpu"
     ):
     """
-    Profile model latency given an input yaml file
+    Post-training quantization of model with various precisions.
     """
     return _quantize(exp_path, checkpoint, precision, device)
 
@@ -51,7 +51,7 @@ def prune(
     device: str = "cpu"
     ):
     """
-    Profile model latency given an input yaml file
+    Prune model connections to sparse representation.
     """
     return _prune(exp_path, checkpoint, prune_amount, device)
 
