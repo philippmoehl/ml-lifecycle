@@ -23,8 +23,6 @@ import torch
 import torch.nn.functional as F
 from torcheval.metrics.functional import multiclass_f1_score
 
-from src.config import OpenAiConfig
-
 _NO_DEFAULT = object()
 WANDB_HOST = "api.wandb.ai"
 WANDB_API_KEY = "WANDB_API_KEY"
