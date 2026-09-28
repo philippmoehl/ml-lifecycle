@@ -1,56 +1,51 @@
-MLOps Lifecycle from Start to Finish
+ml-lifecycle
 =================
-![Header](imgs/header_mlops.png "ref.: MLops Specialization from deeplearing.ai")
-MLops
+
+A PyTorch pipeline that takes a trained checkpoint to a served model. A CLI
+profiles latency, size and accuracy, then applies TorchScript compilation,
+post-training quantization (int8 / float16) and L1 pruning, and packages the
+result as a [TorchServe](https://pytorch.org/serve/getting_started.html) model
+archive. The archives are served through TorchServe, with model registration,
+worker scaling and production metrics driven over its management API.
+
+Training sits upstream of that: experiments are configured with
+[Hydra](https://github.com/facebookresearch/hydra), tracked with
+[Weights and Biases](https://wandb.ai/site), and checkpointed locally.
+Downstream, an active-learning loop stores incoming production inputs and model
+predictions so they can be relabeled and fed back into training.
 
 ![Optimize](imgs/optimize.png "CLI deployment optimization")
-CLI Deployment Preparation Tool
+
+Pipeline
+-----------------
+
+| Stage | What it does | Where |
+| --- | --- | --- |
+| Train | EfficientNet, ResNeXt and ViT image classifiers on a 39-class plant disease dataset. Hydra configs, W&B tracking. | `main.py`, `conf/`, `src/experiment.py` |
+| Profile | Compares original, fused, quantized, fused + quantized and pruned variants on size, latency (avg / min / max) and accuracy. | `optimize.py profile` |
+| Fuse | Compiles to TorchScript (`torch.jit.script`, or trace + `optimize_for_inference`). | `optimize.py fuse` |
+| Quantize | Post-training dynamic quantization of linear layers to int8 or float16 on CPU, half precision on GPU. | `optimize.py quantize` |
+| Prune | L1 unstructured pruning of Conv2d, Linear and LSTM weights. | `optimize.py prune` |
+| Archive | Every optimized model is written as a `.mar` with its label map and a custom handler. | `src/optimize_utils.py`, `src/custom_handler.py` |
+| Serve | Start and stop TorchServe, register models, set and scale workers, read metrics. | `src/app_utils.py`, `pages/2_*_serve.py` |
+| Active learning | Production inputs go to a [Supabase](https://supabase.com/docs) bucket, predictions to Postgres, and an admin page relabels them. | `pages/3_*_label.py` |
+
+Known limit: static (eager mode) quantization for the CNNs is not wired up yet,
+so EfficientNet and ResNeXt fall back to dynamic quantization.
+
+Web application
+-----------------
+
+The serving and labeling steps can also be driven from a
+[Streamlit](https://streamlit.io/) app, for people who do not want to learn the
+TorchServe CLI. It has a user-facing page that calls the model APIs, plus admin
+pages for serving and labeling. As an example, the user-facing page also
+integrates OpenAI's chat API alongside the model APIs.
 
 ![App](imgs/app.gif "Web Application")
 
-Web Application
-
-
-Description
------------------
-This is an example of how a complete ML lifecycle could look like. The project 
-provides most boilerplate code you would normally need to build from scratch in 
-a new project. In an attempt to only use open-source and highly supported 
-frameworks, I also integrated services which are easy to use and configure. For 
-Machine Learning the codebase is implemented with standard PyTorch and easily 
-extended for all types of problems. Configurations of experiments with models 
-are centralized into the 
-[Hydra](https://github.com/facebookresearch/hydra) framework, offering 
-hierarchical organization of all parameters adjustable in training and 
-evaluation. Outcomes of the experiments are automatically tracked with 
-[Weights and Biases](https://wandb.ai/site), either locally or on your personal
-projects page. Checkpoints of models are stored locally and can be used
-after the modelling part is done for deployment. To enable deployment on edge
-devices and scale I added a CLI for typical PyTorch deployment optimzations, 
-offering performance profiling, pruning, quantization and fusion. The perpared
-models are stored with all meta data in a model archive, ready for production.
-Archived models can then be served as APIs, either individually or 
-simultaniously. By the extensive opprtunities 
-[TorchServe](https://pytorch.org/serve/getting_started.html) offers, we can also 
-track production metrics on the backend, as well as manage which models to serve
-when and how much computing power to deploy for each. To pave the way for 
-people new to serving Machine Learning models, who do not want to learn the CLI
-of TorchServe, I also implemented a backend web-app, to manage the serving 
-process. The web-app comes with a user facing frontend where the model APIs are
-usable, and admin pages for serving and active learning. Active learning is
-based on new examples coming in through the frontend, which are annonynoumusly 
-stored in a [Supabase](https://supabase.com/docs) bucket, together with the 
-predictions from the model in a Postgresql database. Fortunatly we can use the 
-[Supabase SDK](https://supabase.com/docs/reference/python/introduction) which 
-enables easy usage.
-
-As an example I also integrated openAI's [chatGPT](https://openai.com/chatgpt) 
-into the frontend application together with the model APIs, using 
-[streamlit](https://streamlit.io/), which is again accompanied by a 
-configuration file controlling the app and administration rights.
-
-If you want to learn more about the underlying services and steps, read my [blog](https://philippmoehl.github.io/)
-post accompaniing the project.
+More background on the services and steps is in the accompanying
+[blog post](https://philippmoehl.github.io/).
 
 Installation
 ---------------
@@ -145,11 +140,11 @@ Track your experiments with Weights and Biases.
 
 To prepare the results for deployment, execute:
 
-`python optimize.py --<command> <experiment_path> --<additonal_options_flag> <option>`
+`python optimize.py <command> <experiment_path> --<additional_option> <value>`
 
-Here is an example: 
+The commands are `profile`, `fuse`, `quantize` and `prune`. Here is an example:
 
-`python optimize.py --fuse ./results/vit/exp_0/royal-capybara-6_2023-10-20_19-27-12 --checkpoint 3`
+`python optimize.py fuse ./results/vit/exp_0/royal-capybara-6_2023-10-20_19-27-12 --checkpoint 3`
 
 To familairize yourself with the possibilities, please execute:
 
